@@ -7,10 +7,9 @@ const router = express.Router();
 const algorithm = 'aes-256-cbc';
 const key = process.env.KEY;
 const iv = process.env.IV;
-const cipher = crypto.createCipheriv(algorithm, key, iv);
-const decipher = crypto.createDecipheriv(algorithm, key, iv);
 
 router.get('/:urlGuid', async function(req, res, next) {
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
     const urlGuid = req.params.urlGuid;
 
     if (!urlGuid) {
@@ -32,12 +31,13 @@ router.get('/:urlGuid', async function(req, res, next) {
 });
 
 router.post('/', async function(req, res, next) {
-    const uuid = uuidv4();
-    const message = req.body.text ? req.body.text : '';
-    let secretMessage = cipher.update(message, 'utf8', 'hex');
-    secretMessage += cipher.final('hex');
-
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
     try {
+        const uuid = uuidv4();
+        const message = req.body.text ? req.body.text : '';
+        let secretMessage = cipher.update(message, 'utf8', 'hex');
+        secretMessage += cipher.final('hex');
+
         await sendQuery(`INSERT INTO messages (message, url) VALUES('${secretMessage}', '${uuid}');`);
 
         const response = { urlGuid: uuid };
